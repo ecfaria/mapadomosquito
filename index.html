@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Mapa do Mosquito</title>
+	<link src="css/jquery-ui-1.10.4.custom.min.css">
+</head>
+<body>
+<form method="post" action="" id="">   
+    <label for="txtEndereco">Endereço:</label>
+    <input type="text" id="txtEndereco" name="txtEndereco" />
+    <input type="button" id="btnEndereco" name="btnEndereco" value="Mostrar no mapa" />
+    <div id="mapa" style="height: 500px; width: 500px"></div>
+    <input type="submit" value="Enviar" name="btnEnviar" />
+    <input type="hidden" id="txtLatitude" name="txtLatitude" />
+    <input type="hidden" id="txtLongitude" name="txtLongitude" />
+</form>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCW5Q9oDgp-9ntnqwRnE0tZPuw62SqhRt8&amp;sensor=false"></script>
+<script>
+	var geocoder;
+	var map;
+	var marker;
+	 
+	function initialize() {
+	    var latlng = new google.maps.LatLng(-23.0204559, -45.556355499999995);
+	    var options = {
+	        zoom: 12,
+	        center: latlng,
+	        mapTypeId: google.maps.MapTypeId.ROADMAP
+	    };
+	 
+	    map = new google.maps.Map(document.getElementById("mapa"), options);
+	 
+	    geocoder = new google.maps.Geocoder();
+	 
+	    marker = new google.maps.Marker({
+	        map: map,
+	        draggable: true,
+	    });
+	 
+	    marker.setPosition(latlng);
+	}
+	 
+	$(document).ready(function () {
+	    initialize();
+
+	    function carregarNoMapa(endereco) {
+	        geocoder.geocode({ 'address': endereco + ', Brasil', 'region': 'BR' }, function (results, status) {
+	            if (status == google.maps.GeocoderStatus.OK) {
+	                if (results[0]) {
+	                    var latitude = results[0].geometry.location.lat();
+	                    var longitude = results[0].geometry.location.lng();
+	 
+	                    $('#txtEndereco').val(results[0].formatted_address);
+	                    $('#txtLatitude').val(latitude);
+	                    $('#txtLongitude').val(longitude);
+	 
+	                    var location = new google.maps.LatLng(latitude, longitude);
+	                    marker.setPosition(location);
+	                    map.setCenter(location);
+	                    map.setZoom(16);
+	                }
+	            }
+	        });
+	    }
+
+	    google.maps.event.addListener(marker, 'drag', function () {
+	        geocoder.geocode({ 'latLng': marker.getPosition() }, function (results, status) {
+	            if (status == google.maps.GeocoderStatus.OK) {
+	                    if (results[0]) { 
+	                    $('#txtEndereco').val(results[0].formatted_address);
+	                    $('#txtLatitude').val(marker.getPosition().lat());
+	                    $('#txtLongitude').val(marker.getPosition().lng());
+	                }
+	            }
+	        });
+	    });
+
+	    $("#txtEndereco").autocomplete({
+	        source: function (request, response) {
+	            geocoder.geocode({ 'address': request.term + ', Brasil', 'region': 'BR' }, function (results, status) {
+	                response($.map(results, function (item) {
+	                    return {
+	                        label: item.formatted_address,
+	                        value: item.formatted_address,
+	                        latitude: item.geometry.location.lat(),
+	                        longitude: item.geometry.location.lng()
+	                    }
+	                }));
+	            })
+	        },
+	        select: function (event, ui) {
+	            $("#txtLatitude").val(ui.item.latitude);
+	            $("#txtLongitude").val(ui.item.longitude);
+	            var location = new google.maps.LatLng(ui.item.latitude, ui.item.longitude);
+	            marker.setPosition(location);
+	            map.setCenter(location);
+	            map.setZoom(16);
+	        }
+	    });
+
+	    $("#btnEndereco").click(function() {
+	        if($(this).val() != "")
+	            carregarNoMapa($("#txtEndereco").val());
+	    })
+	 
+	    $("#txtEndereco").blur(function() {
+	        if($(this).val() != "")
+	            carregarNoMapa($(this).val());
+	    })
+	
+	});
+</script>
+</body>
+</html>
